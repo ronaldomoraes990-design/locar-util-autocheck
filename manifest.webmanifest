@@ -1,0 +1,1 @@
+{"name":"Locar Útil AutoCheck","short_name":"AutoCheck","description":"Coleta, vistoria e entrega de veículos","start_url":"./","scope":"./","display":"standalone","background_color":"#ffffff","theme_color":"#164b98","icons":[{"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]}
