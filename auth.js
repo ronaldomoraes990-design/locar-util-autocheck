@@ -10,8 +10,8 @@
       if(!client)return null;
       const {data:{session}}=await client.auth.getSession(); this.session=session;
       if(!session)return null;
-      const {data:profile}=await client.from('app_users').select('*').eq('id',session.user.id).maybeSingle();
-      if(!profile||!profile.ativo){await client.auth.signOut();this.session=null;return null;}
+      const {data:profile,error}=await client.from('app_users').select('*').eq('id',session.user.id).maybeSingle();
+      if(error||!profile||!profile.ativo){await client.auth.signOut();this.session=null;return null;}
       this.profile=profile; window.currentUser={id:session.user.id,email:session.user.email,nome:profile.nome,perfil:profile.perfil}; return window.currentUser;
     },
     async login(email,password){
@@ -31,13 +31,9 @@
       return;
     }
     if(!user){location.replace('login.html');return;}
-    const header=document.querySelector('header .brand');
-    if(header&&!document.getElementById('authActions')){
-      const box=document.createElement('div');box.id='authActions';box.style.cssText='display:flex;align-items:center;gap:7px;margin-left:12px;font-size:12px';
-      box.innerHTML=`<span id="authUser">${safe(user.nome)} · ${safe(user.perfil)}</span><button id="adminBtn" style="display:${user.perfil==='admin'?'inline-block':'none'};padding:7px 9px;border:0;border-radius:8px;background:#fff;color:#164b98;font-weight:800;cursor:pointer">Admin</button><button id="logoutBtn" style="padding:7px 9px;border:0;border-radius:8px;background:#fff;color:#ed1018;font-weight:800;cursor:pointer">Sair</button>`;
-      header.appendChild(box);
-      document.getElementById('logoutBtn').onclick=()=>window.appAuth.logout();
-      document.getElementById('adminBtn').onclick=()=>location.href='admin.html';
-    }
+    const authUser=document.getElementById('authUser'), admin=document.getElementById('adminBtn'), logout=document.getElementById('logoutBtn');
+    if(authUser)authUser.textContent=`${user.nome} · ${user.perfil}`;
+    if(admin){admin.style.display=user.perfil==='admin'?'inline-block':'none';admin.onclick=()=>location.href='admin.html';}
+    if(logout)logout.onclick=()=>window.appAuth.logout();
   });
 })();
