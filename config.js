@@ -1,5 +1,5 @@
 window.AUTOCHECK_CONFIG = {
-  supabaseUrl: "https://SEU-PROJETO.supabase.co",
-  supabaseAnonKey: "SUA_CHAVE_ANON_PUBLICA",
+  supabaseUrl: "https://qfiunsqjkkxuetmyzmdw.supabase.co",
+  supabaseAnonKey: "sb_publishable_dlBACJeZVFwZ7UcGGRfDPA_8n8_ivRW",
   bucket: "checklists"
 };
