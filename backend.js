@@ -1,15 +1,24 @@
 (() => {
-  const cfg = window.AUTOCHECK_CONFIG || {};
-  const configured = !!(cfg.supabaseUrl && cfg.supabaseAnonKey && !cfg.supabaseUrl.includes('SEU-PROJETO') && !cfg.supabaseAnonKey.includes('SUA_CHAVE'));
-  const client = configured && window.supabase ? window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey) : null;
+  const cfg=window.AUTOCHECK_CONFIG||{};
+  const configured=!!(cfg.supabaseUrl&&cfg.supabaseAnonKey&&!cfg.supabaseUrl.includes('SEU-PROJETO')&&!cfg.supabaseAnonKey.includes('SUA_CHAVE'));
+  const client=configured&&window.supabase?window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseAnonKey):null;
+  function loadScript(src){return new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.onload=resolve;s.onerror=reject;document.head.appendChild(s);});}
+  window.autocheckAuthReady=Promise.all([loadScript('auth.js'),loadScript('audit.js')]).then(async()=>{
+    if(!window.appAuth)return null;
+    const user=await window.appAuth.init();
+    const isLogin=/login\.html$/.test(location.pathname);
+    if(isLogin&&user){location.href='index.html';return user;}
+    if(!isLogin&&!user){location.replace('login.html');return null;}
+    return user;
+  }).catch(()=>null);
   async function sessionRequired(){
-    if(!client) throw new Error('Supabase não configurado.');
+    if(!client)throw new Error('Supabase não configurado.');
     const {data:{session}}=await client.auth.getSession();
-    if(!session) throw new Error('Sessão não autenticada.');
+    if(!session)throw new Error('Sessão não autenticada.');
     return session;
   }
   window.onlineStore={
-    configured, client,
+    configured,client,
     async load(){
       if(!client)return null;
       await sessionRequired();
