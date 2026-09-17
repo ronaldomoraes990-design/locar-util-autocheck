@@ -28,7 +28,7 @@
       <div>
         <div class="eyebrow">LOCAR ÚTIL</div>
         <h1>Radar Comercial IA</h1>
-        <p>Descoberta, investigação e qualificação de potenciais clientes.</p>
+        <p>Descoberta, investigação web e detecção de intenção de compra.</p>
       </div>
       <div class="userbox"><span id="userName"></span><button id="logoutBtn" class="ghost">Sair</button></div>
     </header>
@@ -38,7 +38,7 @@
         <div class="section-title">
           <div>
             <h2>Buscar potenciais clientes</h2>
-            <p>Encontre empresas por região. Ao salvar, o agente investiga automaticamente site, contatos e sinais de oportunidade.</p>
+            <p>Encontre empresas por região. Ao salvar, o agente cruza site oficial, notícias, vagas, releases e outras fontes públicas.</p>
           </div>
         </div>
         <form id="searchForm" class="search-grid">
@@ -62,6 +62,7 @@
 
       <section class="kpis">
         <article><span>Leads salvos</span><strong id="kpiTotal">0</strong></article>
+        <article class="hot-kpi"><span>🔥 Oportunidades Quentes</span><strong id="kpiHot">0</strong></article>
         <article><span>Prioridade A</span><strong id="kpiA">0</strong></article>
         <article><span>Prioridade B</span><strong id="kpiB">0</strong></article>
         <article><span>Investigados</span><strong id="kpiEnriched">0</strong></article>
@@ -76,7 +77,7 @@
           </div>
           <button id="saveQualifiedBtn" class="secondary">Salvar A/B + investigar melhores</button>
         </div>
-        <div class="notice">🤖 <strong>Investigação automática:</strong> ao salvar um lead individual, o agente pesquisa o site e fontes públicas e recalcula o score.</div>
+        <div class="notice">🤖 <strong>Radar de intenção:</strong> ao salvar um lead, o agente procura Compras/Suprimentos, expansão, novos CDs/galpões, vagas de operador de empilhadeira, investimentos e outras evidências. O LinkedIn não é raspado automaticamente.</div>
         <div class="table-wrap"><table><thead><tr><th>Score</th><th>Empresa</th><th>Evidência inicial</th><th>Produto sugerido</th><th>Contato</th><th></th></tr></thead><tbody id="resultsBody"></tbody></table></div>
       </section>
 
@@ -84,16 +85,20 @@
         <div class="section-title actions-row">
           <div>
             <h2>CRM de prospecção</h2>
-            <p>Leads compartilhados com investigação automática e evidências rastreáveis.</p>
+            <p>Leads ordenados por intenção de compra, score comercial e evidências rastreáveis.</p>
           </div>
-          <div class="toolbar"><select id="statusFilter"><option value="">Todos os status</option><option value="novo">Novo</option><option value="contatar">Contatar</option><option value="abordado">Abordado</option><option value="follow_up">Follow-up</option><option value="proposta">Proposta</option><option value="ganho">Ganho</option><option value="perdido">Perdido</option><option value="descartado">Descartado</option></select><button id="exportBtn" class="ghost">Exportar CSV</button></div>
+          <div class="toolbar">
+            <select id="intentFilter"><option value="">Toda intenção</option><option value="quente">🔥 Quentes</option><option value="aquecendo">Aquecendo</option><option value="frio">Frias</option></select>
+            <select id="statusFilter"><option value="">Todos os status</option><option value="novo">Novo</option><option value="contatar">Contatar</option><option value="abordado">Abordado</option><option value="follow_up">Follow-up</option><option value="proposta">Proposta</option><option value="ganho">Ganho</option><option value="perdido">Perdido</option><option value="descartado">Descartado</option></select>
+            <button id="exportBtn" class="ghost">Exportar CSV</button>
+          </div>
         </div>
-        <div class="table-wrap"><table class="crm-table"><thead><tr><th>Prioridade</th><th>Empresa</th><th>Região</th><th>Investigação IA</th><th>Status</th><th>Ações</th></tr></thead><tbody id="crmBody"></tbody></table></div>
+        <div class="table-wrap"><table class="crm-table"><thead><tr><th>Prioridade</th><th>Empresa</th><th>Região</th><th>Intenção / Investigação IA</th><th>Status</th><th>Ações</th></tr></thead><tbody id="crmBody"></tbody></table></div>
         <div id="crmEmpty" class="empty">Nenhum lead salvo ainda.</div>
       </section>
     </main>
 
-    <footer>Radar Comercial IA · Locar Útil · Utiliza fontes públicas. Confirme informações críticas antes da abordagem comercial.</footer>
+    <footer>Radar Comercial IA · Locar Útil · Fontes públicas e rastreáveis. Confirme informações críticas antes da abordagem comercial.</footer>
   </div>
 
   <div id="toast" class="toast" hidden></div>
