@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>Radar Comercial IA | Locar Útil</title>
+  <meta name="theme-color" content="#0b2f3a">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <div id="loginView" class="login-shell">
+    <form id="loginForm" class="login-card">
+      <div class="brand-mark">LU</div>
+      <h1>Radar Comercial IA</h1>
+      <p>Locar Útil · Prospecção inteligente</p>
+      <label>E-mail<input id="email" type="email" autocomplete="email" required></label>
+      <label>Senha<input id="password" type="password" autocomplete="current-password" required></label>
+      <button class="primary" type="submit">Entrar</button>
+      <div id="loginMsg" class="msg"></div>
+      <a class="back-link" href="../index.html">← Voltar ao AutoCheck</a>
+    </form>
+  </div>
+
+  <div id="appView" class="app" hidden>
+    <header class="topbar">
+      <div>
+        <div class="eyebrow">LOCAR ÚTIL</div>
+        <h1>Radar Comercial IA</h1>
+        <p>Empresas com potencial para locação de empilhadeiras e serviços de guincho.</p>
+      </div>
+      <div class="userbox"><span id="userName"></span><button id="logoutBtn" class="ghost">Sair</button></div>
+    </header>
+
+    <main>
+      <section class="panel search-panel">
+        <div class="section-title"><div><h2>Buscar potenciais clientes</h2><p>Pesquise por região, segmento e raio. O sistema qualifica automaticamente os resultados.</p></div></div>
+        <form id="searchForm" class="search-grid">
+          <label>Região / cidade<input id="location" value="São Paulo, SP" required></label>
+          <label>Segmento<select id="segment">
+            <option value="geral">Todos os segmentos</option>
+            <option value="logistica">Logística / Transportadoras / CDs</option>
+            <option value="industria">Indústrias</option>
+            <option value="alimentos">Alimentos e bebidas</option>
+            <option value="farmaceutica">Farmacêutica / Hospitalar</option>
+            <option value="automotivo">Automotivo / Concessionárias / Blindagem</option>
+            <option value="ecommerce">E-commerce / Fulfillment</option>
+            <option value="construcao">Construção / Materiais</option>
+          </select></label>
+          <label>Raio<select id="radius"><option value="10">10 km</option><option value="20" selected>20 km</option><option value="30">30 km</option><option value="50">50 km</option></select></label>
+          <label>Máximo<select id="limit"><option>20</option><option selected>40</option><option>60</option><option>100</option></select></label>
+          <button id="searchBtn" class="primary search-btn" type="submit">🔎 Pesquisar empresas</button>
+        </form>
+        <div id="searchMsg" class="msg"></div>
+      </section>
+
+      <section class="kpis">
+        <article><span>Leads salvos</span><strong id="kpiTotal">0</strong></article>
+        <article><span>Prioridade A</span><strong id="kpiA">0</strong></article>
+        <article><span>Prioridade B</span><strong id="kpiB">0</strong></article>
+        <article><span>Em follow-up</span><strong id="kpiFollow">0</strong></article>
+      </section>
+
+      <section id="resultsPanel" class="panel" hidden>
+        <div class="section-title actions-row">
+          <div><h2>Oportunidades encontradas</h2><p id="resultMeta"></p></div>
+          <button id="saveQualifiedBtn" class="secondary">Salvar todos A/B</button>
+        </div>
+        <div class="table-wrap"><table><thead><tr><th>Score</th><th>Empresa</th><th>Evidência</th><th>Produto sugerido</th><th>Contato</th><th></th></tr></thead><tbody id="resultsBody"></tbody></table></div>
+      </section>
+
+      <section class="panel">
+        <div class="section-title actions-row">
+          <div><h2>CRM de prospecção</h2><p>Leads compartilhados com os usuários ativos da operação.</p></div>
+          <div class="toolbar"><select id="statusFilter"><option value="">Todos os status</option><option value="novo">Novo</option><option value="contatar">Contatar</option><option value="abordado">Abordado</option><option value="follow_up">Follow-up</option><option value="proposta">Proposta</option><option value="ganho">Ganho</option><option value="perdido">Perdido</option><option value="descartado">Descartado</option></select><button id="exportBtn" class="ghost">Exportar CSV</button></div>
+        </div>
+        <div class="table-wrap"><table><thead><tr><th>Prioridade</th><th>Empresa</th><th>Região</th><th>Evidência</th><th>Status</th><th>Ações</th></tr></thead><tbody id="crmBody"></tbody></table></div>
+        <div id="crmEmpty" class="empty">Nenhum lead salvo ainda.</div>
+      </section>
+    </main>
+
+    <footer>Radar Comercial IA · Locar Útil · Dados de fontes públicas. Confirme as informações antes da abordagem comercial.</footer>
+  </div>
+
+  <div id="toast" class="toast" hidden></div>
+  <script src="app.js"></script>
+</body>
+</html>
