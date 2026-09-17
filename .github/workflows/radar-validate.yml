@@ -4,12 +4,14 @@ on:
   push:
     paths:
       - 'radar/app.js'
+      - 'radar/auth-fix.js'
       - 'radar/index.html'
       - 'radar/styles.css'
       - '.github/workflows/radar-validate.yml'
   pull_request:
     paths:
       - 'radar/app.js'
+      - 'radar/auth-fix.js'
       - 'radar/index.html'
       - 'radar/styles.css'
 
@@ -20,9 +22,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Validar sintaxe JavaScript
-        run: node --check radar/app.js
+        run: |
+          node --check radar/auth-fix.js
+          node --check radar/app.js
       - name: Confirmar arquivos essenciais
         run: |
           test -s radar/index.html
           test -s radar/styles.css
+          test -s radar/auth-fix.js
           test -s radar/app.js
