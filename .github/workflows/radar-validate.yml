@@ -1,0 +1,28 @@
+name: Validar Radar Comercial IA
+
+on:
+  push:
+    paths:
+      - 'radar/app.js'
+      - 'radar/index.html'
+      - 'radar/styles.css'
+      - '.github/workflows/radar-validate.yml'
+  pull_request:
+    paths:
+      - 'radar/app.js'
+      - 'radar/index.html'
+      - 'radar/styles.css'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Validar sintaxe JavaScript
+        run: node --check radar/app.js
+      - name: Confirmar arquivos essenciais
+        run: |
+          test -s radar/index.html
+          test -s radar/styles.css
+          test -s radar/app.js
