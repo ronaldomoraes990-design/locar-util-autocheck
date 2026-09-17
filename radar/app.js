@@ -1,0 +1,46 @@
+const SUPABASE_URL='https://qfiunsqjkkxuetmyzmdw.supabase.co';
+const SUPABASE_KEY='sb_publishable_dlBACJeZVFwZ7UcGGRfDPA_8n8_ivRW';
+const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+let currentUser=null,currentProfile=null,lastResults=[],crmLeads=[];
+const $=id=>document.getElementById(id);
+const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const fmtStatus=s=>({novo:'Novo',pesquisando:'Pesquisando',contatar:'Contatar',abordado:'Abordado',follow_up:'Follow-up',proposta:'Proposta',ganho:'Ganho',perdido:'Perdido',descartado:'Descartado'}[s]||s);
+function toast(msg){const t=$('toast');t.textContent=msg;t.hidden=false;clearTimeout(window.__toastTimer);window.__toastTimer=setTimeout(()=>t.hidden=true,3200)}
+function setLoginMode(logged){$('loginView').hidden=logged;$('appView').hidden=!logged}
+async function init(){const {data:{session}}=await db.auth.getSession();if(!session){setLoginMode(false);return}await acceptSession(session)}
+async function acceptSession(session){currentUser=session.user;const {data:profile,error}=await db.from('app_users').select('id,nome,perfil,ativo').eq('id',session.user.id).maybeSingle();if(error||!profile?.ativo){await db.auth.signOut();$('loginMsg').textContent='Usuário não autorizado ou inativo.';setLoginMode(false);return}currentProfile=profile;$('userName').textContent=`${profile.nome} · ${profile.perfil}`;setLoginMode(true);await loadCRM()}
+$('loginForm').addEventListener('submit',async e=>{e.preventDefault();$('loginMsg').textContent='Entrando...';const {data,error}=await db.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});if(error){$('loginMsg').textContent='Não foi possível entrar: '+error.message;return}await acceptSession(data.session)});
+$('logoutBtn').addEventListener('click',async()=>{await db.auth.signOut();location.reload()});
+
+$('searchForm').addEventListener('submit',async e=>{e.preventDefault();await runSearch()});
+async function runSearch(){
+  const btn=$('searchBtn'),location=$('location').value.trim(),segment=$('segment').value,radiusKm=Number($('radius').value),limit=Number($('limit').value);
+  if(!location)return;
+  btn.disabled=true;btn.textContent='Pesquisando...';$('searchMsg').textContent='Consultando fontes públicas e qualificando as empresas encontradas.';
+  try{
+    const {data,error}=await db.functions.invoke('radar-search',{body:{location,segment,radiusKm,limit}});
+    if(error)throw error;if(data?.error)throw new Error(data.error);
+    lastResults=data?.results||[];renderResults(lastResults,data);
+    await db.from('radar_searches').insert({location,segment,radius_km:radiusKm,results_count:lastResults.length,query_payload:{limit,source:data?.source||'web'}});
+    $('searchMsg').textContent=`${lastResults.length} empresas encontradas e classificadas.`;
+  }catch(err){console.error(err);$('searchMsg').textContent='Falha na pesquisa: '+(err.message||err);toast('Não foi possível concluir a pesquisa.')}
+  finally{btn.disabled=false;btn.textContent='🔎 Pesquisar empresas'}
+}
+function contactCell(r){const bits=[];if(r.phone){const n=r.phone.replace(/\D/g,'');bits.push(`<a class="pill" target="_blank" href="https://wa.me/${n.startsWith('55')?n:'55'+n}">WhatsApp</a>`)}if(r.email)bits.push(`<a class="pill" href="mailto:${esc(r.email)}">E-mail</a>`);if(r.website)bits.push(`<a class="pill" target="_blank" rel="noopener" href="${esc(r.website)}">Site</a>`);bits.push(`<a class="pill" target="_blank" rel="noopener" href="${esc(r.source_url)}">Fonte</a>`);return bits.join('')}
+function renderResults(rows,data){$('resultsPanel').hidden=false;$('resultMeta').textContent=`${rows.length} resultados · fonte ${data?.source||'pública'} · ordenados por potencial comercial`;const body=$('resultsBody');body.innerHTML=rows.map((r,i)=>`<tr><td><span class="score grade-${r.grade}">${r.score}</span><span class="sub">Lead ${r.grade}</span></td><td><span class="company">${esc(r.company_name)}</span><span class="sub">${esc(r.city||'')} ${r.distance_km!=null?'· '+r.distance_km+' km':''}</span></td><td>${esc(r.evidence)}<span class="sub">${esc(r.address||'')}</span></td><td>${esc(r.recommended_product||'')}</td><td><div class="contact-links">${contactCell(r)}</div></td><td><button class="mini" data-save="${i}">Salvar</button><button class="mini" data-copy="${i}">Copiar abordagem</button></td></tr>`).join('')||`<tr><td colspan="6">Nenhuma empresa foi encontrada com os filtros atuais.</td></tr>`;
+  body.querySelectorAll('[data-save]').forEach(b=>b.onclick=()=>saveLead(lastResults[Number(b.dataset.save)]));body.querySelectorAll('[data-copy]').forEach(b=>b.onclick=()=>copyText(lastResults[Number(b.dataset.copy)]?.approach_message||''));
+}
+function leadPayload(r){return {company_name:r.company_name,city:r.city||null,state:r.state||null,address:r.address||null,segment:r.segment||$('segment').value,website:r.website||null,phone:r.phone||null,email:r.email||null,source_type:r.source_type||'web',source_id:r.source_id||null,source_url:r.source_url||null,evidence:r.evidence||null,score:r.score||0,grade:r.grade||'C',recommended_product:r.recommended_product||null,approach_message:r.approach_message||null,status:'novo',latitude:r.latitude||null,longitude:r.longitude||null,raw_data:r.raw_data||{}}}
+async function saveLead(r,silent=false){if(!r)return false;const {error}=await db.from('radar_leads').insert(leadPayload(r));if(error){if(error.code==='23505'){if(!silent)toast('Esse prospect já está salvo no CRM.');return false}if(!silent)toast('Erro ao salvar: '+error.message);return false}if(!silent)toast('Prospect salvo no CRM.');await loadCRM();return true}
+$('saveQualifiedBtn').onclick=async()=>{const items=lastResults.filter(r=>r.grade==='A'||r.grade==='B');let n=0;for(const r of items)if(await saveLead(r,true))n++;toast(`${n} novos leads A/B salvos.`);await loadCRM()};
+async function copyText(t){if(!t)return;try{await navigator.clipboard.writeText(t);toast('Abordagem copiada.')}catch{prompt('Copie a abordagem:',t)}}
+
+async function loadCRM(){let q=db.from('radar_leads').select('*').order('score',{ascending:false}).order('created_at',{ascending:false}).limit(500);const {data,error}=await q;if(error){console.error(error);toast('Não foi possível carregar o CRM.');return}crmLeads=data||[];renderCRM();updateKpis()}
+function updateKpis(){$('kpiTotal').textContent=crmLeads.length;$('kpiA').textContent=crmLeads.filter(x=>x.grade==='A').length;$('kpiB').textContent=crmLeads.filter(x=>x.grade==='B').length;$('kpiFollow').textContent=crmLeads.filter(x=>x.status==='follow_up').length}
+$('statusFilter').onchange=renderCRM;
+function renderCRM(){const filter=$('statusFilter').value,rows=filter?crmLeads.filter(x=>x.status===filter):crmLeads;$('crmEmpty').hidden=rows.length>0;$('crmBody').innerHTML=rows.map(r=>`<tr><td><span class="score grade-${r.grade}">${r.score}</span><span class="sub">Lead ${r.grade}</span></td><td><span class="company">${esc(r.company_name)}</span><span class="sub">${esc(r.recommended_product||'')}</span></td><td>${esc(r.city||'')}${r.state?' / '+esc(r.state):''}</td><td>${esc(r.evidence||'')} ${r.source_url?`<a class="sub" target="_blank" rel="noopener" href="${esc(r.source_url)}">ver evidência ↗</a>`:''}</td><td><select class="status-select" data-status="${r.id}">${['novo','contatar','abordado','follow_up','proposta','ganho','perdido','descartado'].map(s=>`<option value="${s}" ${s===r.status?'selected':''}>${fmtStatus(s)}</option>`).join('')}</select></td><td><div class="contact-links">${r.phone?`<a class="pill" target="_blank" href="https://wa.me/${r.phone.replace(/\D/g,'').replace(/^((?!55).*)$/,'55$1')}">WhatsApp</a>`:''}${r.email?`<a class="pill" href="mailto:${esc(r.email)}">E-mail</a>`:''}<button class="mini" data-crmcopy="${r.id}">Abordagem</button></div></td></tr>`).join('')}
+$('crmBody').addEventListener('change',async e=>{const el=e.target;if(!el.matches('[data-status]'))return;const {error}=await db.from('radar_leads').update({status:el.value,updated_at:new Date().toISOString()}).eq('id',el.dataset.status);if(error)toast('Erro ao atualizar status.');else{const x=crmLeads.find(v=>v.id===el.dataset.status);if(x)x.status=el.value;updateKpis();toast('Status atualizado.')}});
+$('crmBody').addEventListener('click',e=>{const b=e.target.closest('[data-crmcopy]');if(!b)return;const r=crmLeads.find(x=>x.id===b.dataset.crmcopy);copyText(r?.approach_message||'')});
+$('exportBtn').onclick=()=>{if(!crmLeads.length){toast('Não há leads para exportar.');return}const cols=['score','grade','company_name','city','state','segment','evidence','recommended_product','phone','email','website','status','source_url'];const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';const csv='\ufeff'+[cols.join(';'),...crmLeads.map(r=>cols.map(c=>q(r[c])).join(';'))].join('\n');const blob=new Blob([csv],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`radar-locar-util-${new Date().toISOString().slice(0,10)}.csv`;a.click();URL.revokeObjectURL(url)};
+if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))}
+init();
